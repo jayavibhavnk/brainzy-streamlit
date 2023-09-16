@@ -13,8 +13,7 @@ from langchain.chains import LLMChain
 API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
 headers = {"Authorization": "Bearer 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"}
 
-OPENAI_API_KEY = "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"
-# OPENAI_API_KEY = st.secrets.OPENAI_API_KEY
+OPENAI_API_KEY = st.secrets.OPENAI_API_KEY
 
 def chat_openai(query):
     llm = ChatOpenAI(temperature=0.9, openai_api_key = OPENAI_API_KEY)

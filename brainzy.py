@@ -187,16 +187,19 @@ def main():
 
 
     if st.button("Generate"):
+        progress_bar = st.progress(0)
         if option == "URL Input":
             mindmap_data = scrape_website(url)
             glinks, ylinks = gen_links(headings(url))
-        
+            progress_bar.progress(30)
         else:
             glinks, ylinks = gen_links(mindmap_data[:10])
-
+            progress_bar.progress(30)
         # mindmapvalue = mindmapgen(mindmap_data)
         mindmapvalue = create_mindmap_kroki(str(mindmap_data))
+        progress_bar.progress(70)
         summarized_text = summarizer(str(mindmap_data))
+        progress_bar.progress(100)
         st.write("Generated Mindmap:")
         render_svg(mindmapvalue)
 

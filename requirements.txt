@@ -1,0 +1,5 @@
+langchain
+openai
+beatifulsoup4
+youtube-search==2.1.2
+googlesearch-python==1.2.3

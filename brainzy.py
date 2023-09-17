@@ -110,7 +110,7 @@ def generate_kroki_diagram(diagram_code, diagram_type):
     return response.text if response.status_code == 200 else None
 
 def create_mindmap_kroki(text1):
-    text1 = text1[:1496]
+    text1 = text1[:2048]
     prompt = create_prompt_template(text1)
     m = chat_openai(prompt)
     # m = chat_with_openai(prompt)

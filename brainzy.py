@@ -56,7 +56,7 @@ def create_prompt_template(text_from_website):
         heading
         sub headings
         keywords
-
+        extract as many keywords and sub headings as possible, it should maintain a hierarchy
         should return in this json format
 
         example
@@ -110,6 +110,7 @@ def generate_kroki_diagram(diagram_code, diagram_type):
     return response.text if response.status_code == 200 else None
 
 def create_mindmap_kroki(text1):
+    text1 = text1[:1496]
     prompt = create_prompt_template(text1)
     m = chat_openai(prompt)
     # m = chat_with_openai(prompt)

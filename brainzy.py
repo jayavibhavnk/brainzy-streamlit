@@ -16,7 +16,7 @@ headers = {"Authorization": "Bearer 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"}
 OPENAI_API_KEY = st.secrets.OPENAI_API_KEY
 
 def chat_openai(query):
-    llm = ChatOpenAI(temperature=0.9, openai_api_key = OPENAI_API_KEY)
+    llm = ChatOpenAI(temperature=1.1, openai_api_key = OPENAI_API_KEY)
     prompt = ChatPromptTemplate.from_template(
         "{query}"
     )
@@ -56,7 +56,9 @@ def create_prompt_template(text_from_website):
         heading
         sub headings
         keywords
-        extract as many keywords and sub headings as possible, it should maintain a hierarchy
+        extract as many keywords and sub headings as possible
+        there should be about 5 to 20 headings and each of them should have multiple keywords, keywords can be key phrases in the length of 1 word to 7 words
+        , it should maintain a hierarchy
         should return in this json format
 
         example
@@ -124,7 +126,6 @@ def create_mindmap_kroki(text1):
             diagram_svg = generate_kroki_diagram(i, "mermaid")
 
             if diagram_svg:
-                # Now you can use 'diagram_svg' which contains the SVG of the diagram
                 mermaid_svgs = mermaid_svgs + diagram_svg
             else:
                 print("Diagram generation failed.")

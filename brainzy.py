@@ -77,7 +77,7 @@ def create_prompt_template(text_from_website):
         }
         },
         }"""
-    prompt = text_from_website[:2786] + sub_p
+    prompt = text_from_website + sub_p
 
     return prompt
 

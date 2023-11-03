@@ -57,10 +57,11 @@ def create_prompt_template(text_from_website):
         sub headings
         keywords
         extract as many keywords and sub headings as possible
-        there should be about 5 to 20 headings and each of them should have multiple keywords, keywords can be key phrases in the length of 1 word to 7 words
-        , it should maintain a hierarchy
+        there should be about 5 to 20 headings and each of them should have multiple keywords,
+        keywords can be key phrases in the length of 1 word to 7 words
+        it should maintain a hierarchy
         should return in this json format
-
+        the format should be strictly followed 
         example
 
         {"heading":

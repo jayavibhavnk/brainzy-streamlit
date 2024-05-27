@@ -36,16 +36,16 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
             theta=selected_metrics,
             fill='toself',
             name='VDB-RAG',
-            line_color='blue',
-            marker=dict(color='blue')
+            line_color='red',
+            marker=dict(color='red')
         ))
         fig.add_trace(go.Scatterpolar(
             r=graph_rag,
             theta=selected_metrics,
             fill='toself',
             name='GraphRAG',
-            line_color='red',
-            marker=dict(color='red')
+            line_color='blue',
+            marker=dict(color='blue')
         ))
 
         fig.update_layout(

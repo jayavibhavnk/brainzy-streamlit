@@ -2,8 +2,8 @@ import streamlit as st
 import plotly.graph_objects as go
 import numpy as np
 
-def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics):
-    if 'Bar Chart' in selected_metrics:
+def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
+    if plot_type == 'Bar Chart':
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
@@ -28,7 +28,7 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics):
 
         st.plotly_chart(fig)
 
-    if 'Scatter Plot' in selected_metrics:
+    elif plot_type == 'Scatter Plot':
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
@@ -52,17 +52,22 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics):
         st.plotly_chart(fig)
 
 def main():
+    st.set_page_config(page_title='RAG Techniques Comparison', layout='wide')
+
     st.title('RAG Techniques Comparison')
+    st.markdown('### Analyze and Compare Retrieval Augmented Generation (RAG) Techniques')
+
     st.sidebar.header('Customize Plot')
 
     metrics = ['Context Precision', 'Faithfulness', 'Answer Relevancy', 'Context Recall', 'Context Relevancy', 'Answer Correctness', 'Answer Similarity', 'Inference Time']
 
     selected_metrics = st.sidebar.multiselect('Select Metrics', metrics, default=['Context Precision', 'Faithfulness'])
+    plot_type = st.sidebar.selectbox('Select Plot Type', ['Bar Chart', 'Scatter Plot'])
 
-    vdb_rag = np.array([0.8792, 0.9242, 0.9361, 1.0, 0.0445, 0.7614, 0.9525, 0.4513])
-    graph_rag = np.array([0.8687, 0.9375, 0.9106, 1.0, 0.0464, 0.6676, 0.9532, 1.0])
+    vdb_rag = [0.8792, 0.9242, 0.9361, 1.0, 0.0445, 0.7614, 0.9525, 0.4513]
+    graph_rag = [0.8687, 0.9375, 0.9106, 1.0, 0.0464, 0.6676, 0.9532, 1.0]
 
-    plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics)
+    plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type)
 
 if __name__ == "__main__":
     main()

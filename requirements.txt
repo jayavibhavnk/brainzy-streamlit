@@ -3,3 +3,4 @@ openai
 beautifulsoup4==4.12.2
 youtube-search==2.1.2
 googlesearch-python==1.2.3
+plotly

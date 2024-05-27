@@ -2,20 +2,23 @@ import streamlit as st
 import plotly.graph_objects as go
 import numpy as np
 
-def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
+def plot_comparison(data_rag, data_vector_db_rag, selected_metrics, plot_type):
+    rag_values = [data_rag[metric] for metric in selected_metrics]
+    vector_db_rag_values = [data_vector_db_rag[metric] for metric in selected_metrics]
+
     if plot_type == 'Bar Chart':
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
             x=selected_metrics,
-            y=vdb_rag,
-            name='VDB-RAG',
+            y=vector_db_rag_values,
+            name='Vector DB RAG',
             marker_color='indianred'
         ))
         fig.add_trace(go.Bar(
             x=selected_metrics,
-            y=graph_rag,
-            name='GraphRAG',
+            y=rag_values,
+            name='RAG Techniques',
             marker_color='lightsalmon'
         ))
 
@@ -32,20 +35,20 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
         fig = go.Figure()
 
         fig.add_trace(go.Scatterpolar(
-            r=vdb_rag,
+            r=vector_db_rag_values,
             theta=selected_metrics,
             fill='toself',
-            name='VDB-RAG',
-            line_color='red',
-            marker=dict(color='red')
-        ))
-        fig.add_trace(go.Scatterpolar(
-            r=graph_rag,
-            theta=selected_metrics,
-            fill='toself',
-            name='GraphRAG',
+            name='Vector DB RAG',
             line_color='blue',
             marker=dict(color='blue')
+        ))
+        fig.add_trace(go.Scatterpolar(
+            r=rag_values,
+            theta=selected_metrics,
+            fill='toself',
+            name='RAG Techniques',
+            line_color='red',
+            marker=dict(color='red')
         ))
 
         fig.update_layout(
@@ -67,17 +70,17 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
 
         fig.add_trace(go.Scatter(
             x=selected_metrics,
-            y=vdb_rag,
+            y=vector_db_rag_values,
             mode='lines+markers',
-            name='VDB-RAG',
+            name='Vector DB RAG',
             line=dict(color='blue', width=2),
             marker=dict(color='blue')
         ))
         fig.add_trace(go.Scatter(
             x=selected_metrics,
-            y=graph_rag,
+            y=rag_values,
             mode='lines+markers',
-            name='GraphRAG',
+            name='RAG Techniques',
             line=dict(color='red', width=2),
             marker=dict(color='red')
         ))
@@ -99,15 +102,32 @@ def main():
 
     st.sidebar.header('Customize Plot')
 
-    metrics = ['Context Precision', 'Faithfulness', 'Answer Relevancy', 'Context Recall', 'Context Relevancy', 'Answer Correctness', 'Answer Similarity', 'Inference Time']
-
-    selected_metrics = st.sidebar.multiselect('Select Metrics', metrics, default=['Context Precision', 'Faithfulness'])
+    selected_metrics = ['context_precision', 'faithfulness', 'answer_relevancy', 'context_recall', 'context_relevancy', 'answer_correctness', 'answer_similarity', 'Inference_time']
     plot_type = st.sidebar.selectbox('Select Plot Type', ['Bar Chart', 'Polar Scatter Plot', 'Line Plot'])
 
-    vdb_rag = [0.8792, 0.9242, 0.9361, 1.0, 0.0445, 0.7614, 0.9525, 0.4513]
-    graph_rag = [0.8687, 0.9375, 0.9106, 1.0, 0.0464, 0.6676, 0.9532, 1.0]
+    data_rag = {
+        'context_precision': 0.8687,
+        'faithfulness': 0.9375,
+        'answer_relevancy': 0.9106,
+        'context_recall': 1.0,
+        'context_relevancy': 0.0464,
+        'answer_correctness': 0.6676,
+        'answer_similarity': 0.9532,
+        'Inference_time': 1.0
+    }
 
-    plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type)
+    data_vector_db_rag = {
+        'context_precision': 0.8792,
+        'faithfulness': 0.9242,
+        'answer_relevancy': 0.9361,
+        'context_recall': 1.0,
+        'context_relevancy': 0.0445,
+        'answer_correctness': 0.7614,
+        'answer_similarity': 0.9525,
+        'Inference_time': 0.4513
+    }
+
+    plot_comparison(data_rag, data_vector_db_rag, selected_metrics, plot_type)
 
 if __name__ == "__main__":
     main()

@@ -7,13 +7,13 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
-            x=metrics,
+            x=selected_metrics,
             y=vdb_rag,
             name='VDB-RAG',
             marker_color='indianred'
         ))
         fig.add_trace(go.Bar(
-            x=metrics,
+            x=selected_metrics,
             y=graph_rag,
             name='GraphRAG',
             marker_color='lightsalmon'
@@ -33,25 +33,27 @@ def plot_comparison(vdb_rag, graph_rag, metrics, selected_metrics, plot_type):
 
         fig.add_trace(go.Scatterpolar(
             r=vdb_rag,
-            theta=metrics,
-            mode='markers',
+            theta=selected_metrics,
+            fill='toself',
             name='VDB-RAG'
         ))
         fig.add_trace(go.Scatterpolar(
             r=graph_rag,
-            theta=metrics,
-            mode='markers',
+            theta=selected_metrics,
+            fill='toself',
             name='GraphRAG'
         ))
 
         fig.update_layout(
-            title='Comparison of RAG Techniques (Polar Scatter Plot)',
             polar=dict(
                 radialaxis=dict(
                     visible=True,
                     range=[0, 1]
                 )
-            )
+            ),
+            showlegend=True,
+            title='Comparison of RAG Techniques (Polar Scatter Plot)',
+            width=800
         )
 
         st.plotly_chart(fig)

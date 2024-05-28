@@ -1,5 +1,5 @@
 langchain==0.0.320
-openai
+openai==0.28.0
 beautifulsoup4==4.12.2
 youtube-search==2.1.2
 googlesearch-python==1.2.3

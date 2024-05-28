@@ -201,13 +201,13 @@ def main():
         # mindmapvalue = mindmapgen(mindmap_data)
         mindmapvalue = create_mindmap_kroki(str(mindmap_data))
         progress_bar.progress(70)
-        summarized_text = summarizer(str(mindmap_data))
+        summarized_text = chat_openai("Give me a brief summary of: " + str(mindmap_data))
         progress_bar.progress(100)
         st.write("Generated Mindmap:")
         render_svg(mindmapvalue)
 
-        # st.write("Summary:")
-        # st.write(summarized_text)
+        st.write("Summary:")
+        st.write(summarized_text)
 
         st.write("Relevant Links")
         for i in glinks:

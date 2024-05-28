@@ -206,8 +206,8 @@ def main():
         st.write("Generated Mindmap:")
         render_svg(mindmapvalue)
 
-        st.write("Summary:")
-        st.write(summarized_text)
+        # st.write("Summary:")
+        # st.write(summarized_text)
 
         st.write("Relevant Links")
         for i in glinks:

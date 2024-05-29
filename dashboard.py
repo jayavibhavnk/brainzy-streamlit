@@ -18,7 +18,7 @@ def plot_comparison(data_rag, data_vector_db_rag, selected_metrics, plot_type):
         fig.add_trace(go.Bar(
             x=selected_metrics,
             y=rag_values,
-            name='RAG Techniques',
+            name='Graph RAG',
             marker_color='lightsalmon'
         ))
 

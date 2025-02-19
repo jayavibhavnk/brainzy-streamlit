@@ -1,233 +1,166 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import requests
 import base64
-import googlesearch 
+from groq import Groq
+from googlesearch import search
 from youtube_search import YoutubeSearch
 import json
-from langchain.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
 
-API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
-headers = {"Authorization": "Bearer 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"}
+# Initialize Groq client
+client = Groq(api_key=st.secrets.GROQ_API_KEY)
 
-OPENAI_API_KEY = st.secrets.OPENAI_API_KEY
-
-def chat_openai(query):
-    llm = ChatOpenAI(temperature=1.1, openai_api_key = OPENAI_API_KEY)
-    prompt = ChatPromptTemplate.from_template(
-        "{query}"
+def chat_groq(query):
+    """Query Groq's AI model for responses"""
+    response = client.chat.completions.create(
+        messages=[{"role": "user", "content": query}],
+        model="mixtral-8x7b-32768",
+        temperature=1.1,
+        max_tokens=2048
     )
-
-    chain = LLMChain(llm=llm, prompt=prompt)
-
-    return (chain.run(query=query))
-
+    return response.choices[0].message.content
 
 def scrape_website(url):
+    """Scrape website content and structure"""
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
     headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
     paragraphs = soup.find_all('p')
 
-    all_text_and_headings = []
-
+    content = []
     for heading, paragraph in zip(headings, paragraphs):
-        all_text_and_headings.append(heading.text.strip())
-        all_text_and_headings.append(paragraph.text.strip())
+        content.append(heading.text.strip())
+        content.append(paragraph.text.strip())
 
-    scraped_text = ""
-
-    text = {}
-
-    for idx in range(0, len(all_text_and_headings), 2):
-        heading = all_text_and_headings[idx]
-        paragraph = all_text_and_headings[idx + 1]
-        text[heading] = paragraph
-
-    return text
-
+    return {"content": content[:20]}  # Limit to first 20 elements
 
 def create_prompt_template(text_from_website):
-    sub_p = """for the above text create a tree node hierarchy for the above content
-        in this format
-        heading
-        sub headings
-        keywords
-        extract as many keywords and sub headings as possible
-        there should be about 5 to 20 headings and each of them should have multiple keywords,
-        keywords can be key phrases in the length of 1 word to 7 words
-        it should maintain a hierarchy
-        should return in this json format
-        the format should be strictly followed 
-        example
-
-        {"heading":
-        {"sub-heading":
-        {
-        "keyword": {},
-        },
-        {"sub-heading 2":
-        {
-        "keyword": {},
-        },
-
+    """Create structured prompt for mind mapping"""
+    structure_guide = """
+    Create a hierarchical node structure in JSON format with:
+    - Main headings
+    - Sub-headings 
+    - Keywords (1-7 word phrases)
+    Include 5-20 headings each with multiple keywords.
+    
+    Format example:
+    {
+        "Main Topic": {
+            "Sub-Topic 1": {"keyword1": {}, "keyword2": {}},
+            "Sub-Topic 2": {"keyword1": {}, "keyword2": {}}
         }
-        },
-        }"""
-    prompt = text_from_website + sub_p
+    }"""
+    
+    return f"{text_from_website}\n\n{structure_guide}"
 
-    return prompt
-
-def create_mindmap(json_file):
-    headings = list(json_file.keys())
-    # print(headings)
+def create_mindmap(json_data):
+    """Convert JSON structure to Mermaid syntax"""
     mindmaps = []
-    # mindmap = "mindmap"+"\n"
-    for i in headings:
-        mindmap = "mindmap"+"\n"
-        nh = i.replace('(', '')
-        nh = nh.replace(')', '')
-        mindmap = mindmap + "  " + "root({})".format(nh) + "\n"
-        sub_map = json_file[i]
-        sub_headings = list(sub_map.keys())
-        for j in sub_headings:
-            mindmap = mindmap + "    " + j + '\n'
-            items = list(sub_map[j].keys())
-            for k in items:
-                mindmap = mindmap + '      ' + k + '\n'
-        mindmaps.append(mindmap)
-
+    for heading in json_data.keys():
+        mermaid_code = "mindmap\n"
+        clean_heading = heading.replace('(', '').replace(')', '')
+        mermaid_code += f"  root({clean_heading})\n"
+        
+        for sub_heading, keywords in json_data[heading].items():
+            mermaid_code += f"    {sub_heading}\n"
+            for keyword in keywords.keys():
+                mermaid_code += f"      {keyword}\n"
+        
+        mindmaps.append(mermaid_code)
     return mindmaps
 
-
-def generate_kroki_diagram(diagram_code, diagram_type):
-    kroki_api_url = "https://kroki.io"
-    payload = {
-        "diagram_source": diagram_code,
-        "diagram_type": diagram_type,
-    }
-    response = requests.post(f"{kroki_api_url}/{diagram_type}/svg", json=payload)
+def generate_kroki_diagram(code, diagram_type="mermaid"):
+    """Generate SVG diagram using Kroki API"""
+    response = requests.post(
+        f"https://kroki.io/{diagram_type}/svg",
+        json={"diagram_source": code}
+    )
     return response.text if response.status_code == 200 else None
 
-def create_mindmap_kroki(text1):
-    text1 = text1[:2048]
-    prompt = create_prompt_template(text1)
-    m = chat_openai(prompt)
-    # m = chat_with_openai(prompt)
-    newparse = m[m.find("{"):(len(m)-m[::-1].find('}'))]
-    newparse = json.loads(newparse)
-    # m = json.loads(m)
-    m = create_mindmap(newparse)
-    mermaid_svgs = ""
+def create_mindmap_kroki(text):
+    """Full mindmap generation pipeline"""
+    truncated_text = str(text)[:2048]
+    prompt = create_prompt_template(truncated_text)
+    
     try:
-        for i in m:
-            diagram_svg = generate_kroki_diagram(i, "mermaid")
-
-            if diagram_svg:
-                mermaid_svgs = mermaid_svgs + diagram_svg
-            else:
-                print("Diagram generation failed.")
-        return mermaid_svgs
-    except:
-        print("error")
+        json_response = chat_groq(prompt)
+        json_start = json_response.find('{')
+        json_end = json_response.rfind('}') + 1
+        parsed_data = json.loads(json_response[json_start:json_end])
+        
+        mermaid_diagrams = create_mindmap(parsed_data)
+        svg_output = ""
+        
+        for diagram in mermaid_diagrams:
+            svg = generate_kroki_diagram(diagram)
+            if svg:
+                svg_output += svg
+                
+        return svg_output
+    
+    except Exception as e:
+        st.error(f"Error generating mindmap: {str(e)}")
         return None
 
-def generate_answer(data):
-    pass
-
-def gen_links(input_text):
-    results = googlesearch.search(input_text)
-    linklist = []
-    for i in results:
-      linklist.append(i)
-    results = YoutubeSearch(input_text, max_results=3).to_dict()
-    resultsfinal = ['https://youtube.com' + url['url_suffix'] for url in results]
-    return linklist[:4], resultsfinal
-
-
-def summarizer(data):
-    payload = {"inputs":data}
-    response = requests.post(API_URL, headers=headers, json=payload).json()
-    return response[0]['summary_text']
-
-        
-def mindmapgen(data):
-    #edit the svg data here
-    svg_file_path = "sample.svg"
-    with open(svg_file_path, "r") as svg_file:
-        svg_content = svg_file.read()
-    return svg_content
-
-def headings(url):
-    headings_content = scrape_website(url)
-    headings = [heading for heading in headings_content.keys()]
-    finalheading = ""
-    for i in range(1,5):
-        finalheading += headings[i] + " "
-    return finalheading
+def gen_links(query):
+    """Generate relevant web and YouTube links"""
+    web_links = list(search(query, num_results=4))
+    
+    youtube_results = YoutubeSearch(query, max_results=3).to_dict()
+    youtube_links = [f"https://youtube.com{result['url_suffix']}" 
+                     for result in youtube_results]
+    
+    return web_links, youtube_links
 
 def render_svg(svg):
-    """Renders the given svg string."""
-    b64 = base64.b64encode(svg.encode('utf-8')).decode("utf-8")
-    html = r'<img src="data:image/svg+xml;base64,%s"/>' % b64
+    """Display SVG in Streamlit"""
+    b64 = base64.b64encode(svg.encode()).decode()
+    html = f'<img src="data:image/svg+xml;base64,{b64}"/>'
     st.write(html, unsafe_allow_html=True)
 
 def main():
-    st.title("Brainzy by Tl;DΣR")
-    st.markdown("Generate Mindmaps and notes for any content!")
-
-    # Input options: Text Input and URL Input
-    option = st.radio("Choose an input option:", ("Direct Text Input", "URL Input"))
-
-    if option == "Direct Text Input":
-        mindmap_data = st.text_area("Enter your text:")
-
+    """Main application interface"""
+    st.title("🧠 Brainzy - Instant Knowledge Organizer")
+    st.markdown("Transform any content into structured mindmaps using Groq's AI!")
+    
+    input_method = st.radio("Input method:", 
+                           ("Text Input", "Website URL"))
+    
+    user_input = ""
+    if input_method == "Text Input":
+        user_input = st.text_area("Enter your content:", height=200)
     else:
-        url = st.text_input("Enter URL:")
-
-
-    if st.button("Generate"):
-        progress_bar = st.progress(0)
-        if option == "URL Input":
-            mindmap_data = scrape_website(url)
-            glinks, ylinks = gen_links(headings(url))
-            progress_bar.progress(30)
-        else:
-            glinks, ylinks = gen_links(mindmap_data[:10])
-            progress_bar.progress(30)
-        # mindmapvalue = mindmapgen(mindmap_data)
-        mindmapvalue = create_mindmap_kroki(str(mindmap_data))
-        progress_bar.progress(70)
-        summarized_text = chat_openai("Give me a brief summary of: " + str(mindmap_data))
-        progress_bar.progress(100)
-        st.write("Generated Mindmap:")
-        render_svg(mindmapvalue)
-
-        st.write("Summary:")
-        st.write(summarized_text)
-
-        st.write("Relevant Links")
-        for i in glinks:
-            st.write(i)
-
-        st.write("Youtube Links")
-        for i in ylinks:
-            st.write(i)
-
-
-        # question = st.text_input("Ask a question:")
-        # if st.button("Ask"):
-        #     st.text("Question: ")
-        #     st.text("Answer: ")
-
-        # # Answer the question (You will fill this logic)
-        # if question:
-        #     answer = generate_answer(question)
-        #     st.text("Question: " + question)
-        #     st.text("Answer: " + answer)
+        url = st.text_input("Enter website URL:")
+        if url:
+            user_input = scrape_website(url)
+    
+    if st.button("Generate Mindmap"):
+        with st.spinner("Creating knowledge structure..."):
+            # Generate content
+            web_links, youtube_links = gen_links(str(user_input)[:100])
+            mindmap_svg = create_mindmap_kroki(user_input)
+            
+            # Generate summary
+            summary = chat_groq(f"Create 3 bullet points summarizing this: {str(user_input)[:2000]}")
+            
+            # Display results
+            st.subheader("Visual Mindmap")
+            if mindmap_svg:
+                render_svg(mindmap_svg)
+            else:
+                st.warning("Could not generate visual diagram")
+            
+            st.subheader("Key Points")
+            st.write(summary)
+            
+            st.subheader("Recommended Resources")
+            st.markdown("#### Web Links:")
+            for link in web_links:
+                st.markdown(f"- [{link}]({link})")
+            
+            st.markdown("#### YouTube Videos:")
+            for vid in youtube_links:
+                st.markdown(f"- [{vid}]({vid})")
 
 if __name__ == "__main__":
     main()
